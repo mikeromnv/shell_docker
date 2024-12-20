@@ -1,26 +1,16 @@
-# Этап 1: Сборка приложения
-FROM gcc:latest AS build-stage
+# Этап 1: Сборка
+FROM ubuntu:22.04 AS build-stage
 
-# Устанавливаем рабочую директорию
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    libc6-dev
+
 WORKDIR /app
-
-# Копируем исходный код в контейнер
 COPY ./app /app
+RUN gcc -o my_shell main.c
 
-# Компилируем приложение с флагом для POSIX-расширений
-RUN gcc -o my_shell main.c -D_GNU_SOURCE
-
-# Этап 2: Минимальный образ для запуска
+# Этап 2: Минимальный запуск
 FROM ubuntu:22.04
-
-# Устанавливаем необходимые зависимости для запуска
-RUN apt-get update && apt-get install -y libc-bin && apt-get clean
-
-# Копируем скомпилированное приложение из первого этапа
-COPY --from=build-stage /app/my_shell /usr/local/bin/my_shell
-
-# Устанавливаем рабочую директорию
-WORKDIR /root
-
-# Указываем точку входа
-ENTRYPOINT ["my_shell"]
+COPY --from=build-stage /app/my_shell /my_shell
+ENTRYPOINT ["/my_shell"]
